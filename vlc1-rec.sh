@@ -117,12 +117,12 @@ if [[ -d "$basedirectory" ]]; then
 
                         *study*)
                         echo "Writing to ${filename}";echo
-                        ${prog} http://admin:numark@192.168.0.81:81/videostream.asf  --noaudio --sout-transcode-vb=$bitrate --sout "#transcode{venc=x264,vcodec=h264}:std{access=file,mux=mp4,dst=${filename}"
+                        ${prog} http://${user}:${password}@192.168.0.81:81/videostream.asf  --noaudio --sout-transcode-vb=$bitrate --sout "#transcode{venc=x264,vcodec=h264}:std{access=file,mux=mp4,dst=${filename}"
                         ;;
 
                         *kitchen*)
                         echo "Writing to ${filename}";echo
-                        ${prog} http://admin:numark@192.168.0.82:82/videostream.asf  --noaudio --sout-transcode-vb=$bitrate --sout "#transcode{venc=x264,vcodec=h264}:std{access=file,mux=mp4,dst=${filename}"
+                        ${prog} http://${user}:${password}@192.168.0.82:82/videostream.asf  --noaudio --sout-transcode-vb=$bitrate --sout "#transcode{venc=x264,vcodec=h264}:std{access=file,mux=mp4,dst=${filename}"
                         ;;
 
                         *)

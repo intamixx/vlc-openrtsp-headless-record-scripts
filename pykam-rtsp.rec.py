@@ -88,6 +88,7 @@ def get_process_children(pid):
 def check_camera(hostip, port, camera):
         # Create a TCP socket
                 s = socket.socket()
+		s.settimeout(10)
                 syslog.syslog(syslog.LOG_INFO, "Attempting connect -> %s Kam" % camera)
                 print "Attempting to connect to %s on port %s" % (hostip, port)
                 try:
@@ -95,6 +96,11 @@ def check_camera(hostip, port, camera):
                         syslog.syslog(syslog.LOG_INFO, "Connected -> %s:%s" % (hostip, port) )
                         print "Connected to %s on port %s" % (hostip, port)
                         return True
+                except socket.timeout:
+                        syslog.syslog(syslog.LOG_INFO, "Caught a connection timeout -> %s" % (hostip) )
+                        print "Caught a connection timeout %s" % (hostip)
+                        os._exit(1)
+                        return False
                 except socket.error, e:
                         syslog.syslog(syslog.LOG_INFO, "Connect Failed -> %s:%s" % (hostip, port) )
                         print "Connection to %s on port %s failed: %s" % (hostip, port, e)

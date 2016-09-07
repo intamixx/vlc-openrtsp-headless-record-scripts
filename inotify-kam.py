@@ -15,11 +15,21 @@ try:
         import subprocess
         import syslog
         import time
+        import shlex
 except ImportError as e:
         print "\n%s is not installed. Please install it before running this script." % (e)
         exit (1)
 
 cameras = ['front', 'tree', 'back']
+
+class Counter(object):
+    """
+    Simple counter.
+    """
+    def __init__(self):
+        self.count = 0
+    def plusone(self):
+        self.count += 1
 
 class EventHandler(pyinotify.ProcessEvent):
         def process_IN_CREATE(self, event):
@@ -32,20 +42,20 @@ class EventHandler(pyinotify.ProcessEvent):
         def process_IN_DELETE(self, event):
                 print "Removing:", event.pathname
 
-	def runCMD(camera):
-		cmd = "/usr/bin/python /home/vyos/scripts/pykam-rtsp-rec.py -c %s -d 32" % camera
-		syslog.syslog(syslog.LOG_INFO, "Checking CMD %s is running ..." % cmd)
-		process = os.popen("ps ax -o pid,cmd | grep -i \'%s\' | grep -v grep" % cmd).read()
-	
-		if (process):
-		        print process
-			process = process.lstrip(' ')
-		        process = process.rstrip()
-		        (pid, prog) = process.split(' ',1)
-		        syslog.syslog(syslog.LOG_INFO, "Program CMD %s [%s] is already running! ..." % (prog, pid) )
-		else:
-			p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-			syslog.syslog(syslog.LOG_INFO, "Launching CMD %s [%s]" % (cmd, p.pid) )
+def runCMD(camera):
+    cmd = "/usr/bin/python /home/vyos/scripts/pykam-rtsp-rec.py -c %s -d 32" % camera
+    syslog.syslog(syslog.LOG_INFO, "Checking CMD %s is running ..." % cmd)
+    process = os.popen("ps ax -o pid,cmd | grep -i \'%s\' | grep -v grep" % cmd).read()
+
+    if (process):
+        print process
+        process = process.lstrip(' ')
+        process = process.rstrip()
+        (pid, prog) = process.split(' ',1)
+        syslog.syslog(syslog.LOG_INFO, "Program CMD %s [%s] is already running! ..." % (prog, pid) )
+    else:
+        p = subprocess.Popen(shlex.split(cmd), shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        syslog.syslog(syslog.LOG_INFO, "Launching CMD %s [%s]" % (cmd, p.pid) )
 
 wm = pyinotify.WatchManager()
 mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE # watched events

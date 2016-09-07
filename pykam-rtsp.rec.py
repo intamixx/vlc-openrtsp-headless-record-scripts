@@ -17,6 +17,7 @@ try:
         import sys
         import os
         import socket
+        import shlex
 except ImportError as e:
         print "\n%s is not installed. Please install it before running this script." % (e)
         exit (1)
@@ -55,7 +56,7 @@ def run(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = N
         pass
     def alarm_handler(signum, frame):
         raise Alarm
-    p = Popen(args, shell = shell, cwd = cwd, stdout = PIPE, stderr = PIPE, env = env)
+    p = Popen(shlex.split(args), shell = False, cwd = cwd, stdout = PIPE, stderr = PIPE, env = env)
     syslog.syslog(syslog.LOG_INFO, "Running %s -> Pid [%d] " % (ffmpeg, p.pid) )
     if timeout != -1:
         signal(SIGALRM, alarm_handler)
@@ -80,7 +81,8 @@ def run(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = N
     return p.returncode, stdout, stderr
 
 def get_process_children(pid):
-    p = Popen('ps --no-headers -o pid --ppid %d' % pid, shell = True,
+    pscommand = "ps --no-headers -o pid --ppid %d" % pid
+    p = Popen(shlex.split(pscommand), shell = False,
               stdout = PIPE, stderr = PIPE)
     stdout, stderr = p.communicate()
     return [int(p) for p in stdout.split()]
@@ -88,7 +90,7 @@ def get_process_children(pid):
 def check_camera(hostip, port, camera):
         # Create a TCP socket
                 s = socket.socket()
-		s.settimeout(10)
+                s.settimeout(10)
                 syslog.syslog(syslog.LOG_INFO, "Attempting connect -> %s Kam" % camera)
                 print "Attempting to connect to %s on port %s" % (hostip, port)
                 try:
@@ -169,15 +171,17 @@ def main(argv):
     runStr = "%s -rtsp_transport tcp -y -i rtsp://%s:%s@%s:%s/%s -r %s -an /%s/%s-%s.mp4" % (ffmpeg, username, password, hostip, port, service, framerate, directory, camera, timeNow)
 
     print runStr
-    ( retCode, stdout, stderr ) = run(runStr, shell = True, timeout = duration)
+    ( retCode, stdout, stderr ) = run(runStr, shell = False, timeout = duration)
     retCode = int(retCode)
     if (retCode == -2):
-        print "Command exited normally"
+        print "Command terminated normally"
+        syslog.syslog(syslog.LOG_INFO, "Command terminated normally %s" % (retCode) )
         sys.exit(0)
     else:
         print "Command failed"
         print "Return Code: %s" % retCode
         print "%s\n%s" % (stdout, stderr)
+        syslog.syslog(syslog.LOG_INFO, "Command failed: Return Code %s" % (retCode) )
         sys.exit(1)
 
 if __name__ == '__main__':
